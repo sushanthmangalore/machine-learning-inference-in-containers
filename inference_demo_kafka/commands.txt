@@ -1,0 +1,15 @@
+# Build the Docker image
+docker build -t inference_kafka . 
+# Create an ECR repository in your preferred AWS region. Tag the local Docker image with the ECR repo URI
+docker tag inference_demo <<account_id>>.dkr.ecr.<<region>>.amazonaws.com/inference_kafka
+# Login to ECR
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin <<account_id>>.dkr.ecr.<<region>>.amazonaws.com/
+# Login the image to ECR
+docker push <<account_id>>.dkr.ecr.<<region>>.amazonaws.com/inference_kafka      
+
+
+# Pull the Docker container
+docker pull <<account_id>>.dkr.ecr.<<region>>.amazonaws.com/inference_demo:latest
+# Run the container. Passing EC2 host IP as  enviroment variable to Docker container so that  Kafka cluster on EC2 can be accessed from the container. This step is not necessary for Confluent Cloud
+docker run -it -v `pwd`/data-out_kafka:/app/output -e IP=`hostname -i` <<account_id>>.dkr.ecr.<<region>>.amazonaws.com/inference_demo:latest
+# You should see a data directory created in the directory from where you ran the Docker command, with the JSON output. The input file is read from the Kafka topic. The Kafka producer and the sampel file is included in a seprate directory here and can be run diretly on the EC2 instance
